@@ -1,6 +1,6 @@
 name = "rd-paint" # 项目名称
 main = "src/index.js"
-compatibility_date = "2025-10-26"
+compatibility_date = "2024-04-03"
 
 [assets]
 directory = "public"
