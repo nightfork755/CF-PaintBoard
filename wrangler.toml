@@ -1,14 +1,14 @@
-name = "paintboard" # 项目名称
+name = "rd-paint" # 项目名称
 main = "src/index.js"
-compatibility_date = "2024-04-03"
+compatibility_date = "2025-10-26"
 
 [assets]
 directory = "public"
 binding = "ASSETS"
 
 [[kv_namespaces]]
-binding = "PaintBoard_KV" # 你的 KV 命名空间的名称
-id = "xxx" # 命名空间的 ID
+binding = "NF_PB_KV" # 你的 KV 命名空间的名称
+id = "ed0d3d95d909409f8f0f9ba6894f8a1e" # 命名空间的 ID
 
 [[durable_objects.bindings]]
 name = "WEBSOCKET_HANDLER"
@@ -21,4 +21,4 @@ allow = ["rpc"]
 tag = "v1"
 new_sqlite_classes = ["WebSocketHandler"]
 
-route = "example.com/*" # 替换成你的域名
+route = "pb.qpoem.org.cn/*" # 替换成你的域名
