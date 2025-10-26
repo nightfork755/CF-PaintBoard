@@ -131,7 +131,7 @@ async function generateToken(request, env) {
   const { timeWindow = 3600, maxCount = 1 } = inviteObj;
 
   // 获取当前邀请码的限流状态
-  const tokens = await env.ED_PB_KV.get('tokens', { type: 'json' }) || {};
+  const tokens = await env.NF_PB_KV.get('tokens', { type: 'json' }) || {};
   const now = Date.now();
   let count = 0;
   let windowStart = now;
@@ -153,7 +153,7 @@ async function generateToken(request, env) {
   // 生成 token时也用leftCount
   const token = crypto.randomUUID();
   tokens[token] = { inviteCode: invitationCode, createdAt: now };
-  await env.ED_PB_KV.put('tokens', JSON.stringify(tokens));
+  await env.NF_PB_KV.put('tokens', JSON.stringify(tokens));
 
   return Response.json({ token, resetIn, leftCount });
 }
@@ -171,7 +171,7 @@ async function validateToken(request, env) {
     return Response.json({ error: '请填写 token' }, { status: 400 });
   }
 
-  const tokens = await env.ED_PB_KV.get('tokens', { type: 'json' }) || {};
+  const tokens = await env.NF_PB_KV.get('tokens', { type: 'json' }) || {};
   if (!tokens[token]) {
     return Response.json({ error: '此 token 无效！' }, { status: 403 });
   }
@@ -188,7 +188,7 @@ async function drawPixel(request, env) {
   }
   const { token, x, y, color } = body;
 
-  const tokens = await env.ED_PB_KV.get('tokens', { type: 'json' }) || {};
+  const tokens = await env.NF_PB_KV.get('tokens', { type: 'json' }) || {};
   if (!tokens[token]) {
     return Response.json({ error: '此 token 无效！' }, { status: 403 });
   }
@@ -202,7 +202,7 @@ async function drawPixel(request, env) {
     return Response.json({ error: '颜色格式错误，请使用 HEX 十六进制颜色格式' }, { status: 400 });
   }
 
-  const cooldowns = await env.ED_PB_KV.get('cooldowns', { type: 'json' }) || {};
+  const cooldowns = await env.NF_PB_KV.get('cooldowns', { type: 'json' }) || {};
   const now = Date.now();
   const lastDraw = cooldowns[token];
   const cooldownMs = config.cooldownSeconds * 1000;
@@ -212,13 +212,13 @@ async function drawPixel(request, env) {
     return Response.json({ error: '绘画冷却中……', remainingSeconds }, { status: 429 });
   }
 
-  const canvas = await env.ED_PB_KV.get('canvas', { type: 'json' }) || {};
+  const canvas = await env.NF_PB_KV.get('canvas', { type: 'json' }) || {};
   const key = `${x},${y}`;
   canvas[key] = color.toUpperCase();
-  await env.ED_PB_KV.put('canvas', JSON.stringify(canvas));
+  await env.NF_PB_KV.put('canvas', JSON.stringify(canvas));
 
   cooldowns[token] = now;
-  await env.ED_PB_KV.put('cooldowns', JSON.stringify(cooldowns));
+  await env.NF_PB_KV.put('cooldowns', JSON.stringify(cooldowns));
 
   // Broadcast
   const id = env.WEBSOCKET_HANDLER.idFromName('main');
@@ -230,7 +230,7 @@ async function drawPixel(request, env) {
 
 async function getCanvas(request, env) {
   const config = await getConfigFromKV(env);
-  const canvas = await env.ED_PB_KV.get('canvas', { type: 'json' }) || {};
+  const canvas = await env.NF_PB_KV.get('canvas', { type: 'json' }) || {};
 
   return Response.json({
     width: config.canvasWidth,
@@ -281,7 +281,7 @@ async function addInvitationCode(request, env) {
 
   // 保存为对象数组
   config.invitationCodes.push({ code, timeWindow: timeWindow ?? 3600, maxCount: maxCount ?? 1 });
-  await env.ED_PB_KV.put('config', JSON.stringify(config));
+  await env.NF_PB_KV.put('config', JSON.stringify(config));
 
   return Response.json({ success: true, invitationCodes: config.invitationCodes });
 }
@@ -295,7 +295,7 @@ async function deleteInvitationCode(request, env, code) {
   }
 
   config.invitationCodes.splice(index, 1);
-  await env.ED_PB_KV.put('config', JSON.stringify(config));
+  await env.NF_PB_KV.put('config', JSON.stringify(config));
 
   return Response.json({ success: true, invitationCodes: config.invitationCodes });
 }
@@ -315,7 +315,7 @@ async function updateCooldown(request, env) {
 
   const config = await getConfigFromKV(env);
   config.cooldownSeconds = cooldownSeconds;
-  await env.ED_PB_KV.put('config', JSON.stringify(config));
+  await env.NF_PB_KV.put('config', JSON.stringify(config));
 
   return Response.json({ success: true, cooldownSeconds });
 }
@@ -335,7 +335,7 @@ async function checkAdminAuth(auth, env) {
 }
 
 async function getConfigFromKV(env) {
-  let config = await env.ED_PB_KV.get('config', { type: 'json' });
+  let config = await env.NF_PB_KV.get('config', { type: 'json' });
   if (!config) {
     // Initialize default config
     config = {
@@ -346,7 +346,7 @@ async function getConfigFromKV(env) {
       adminPassword: '26d37903166ba855278d8029878e9053923aa77eeba1943589d4b4774f1b14482c7233ab3f459ff86e99db9f1288447234ee80cfcb3f26330b94efa4267cea1a',
       invitationCodes: ['INVITE2024', 'DEMO1234', 'TEST5678']
     };
-    await env.ED_PB_KV.put('config', JSON.stringify(config));
+    await env.NF_PB_KV.put('config', JSON.stringify(config));
   }
   return config;
 }
@@ -367,7 +367,7 @@ async function getInvitationCodeUsage(request, env, code) {
     return Response.json({ error: '邀请码无效！' }, { status: 404 });
   }
   const { timeWindow = 3600, maxCount = 1 } = inviteObj;
-  const tokens = await env.ED_PB_KV.get('tokens', { type: 'json' }) || {};
+  const tokens = await env.NF_PB_KV.get('tokens', { type: 'json' }) || {};
   const now = Date.now();
   let count = 0;
   let windowStart = now;
